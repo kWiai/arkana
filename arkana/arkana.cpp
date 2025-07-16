@@ -35,13 +35,10 @@ vector<brick> bricks{};
 int fullstep = 10;
 step ballStep{fullstep/2,fullstep/2};
 
-step ballStep{3,3};
 
 rect mainrect{393,500,100,10};
 
 rect ball{ 400,450,10,10 };
-
-bool next_to;
 
 HWND hWnd;
 ULONG_PTR gdiplusToken;
@@ -156,8 +153,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         InvalidateRect(hWnd, NULL, TRUE);
         break;
    case WM_TIMER:
-       if (wParam == 1 && ball.posX + ball.width <= 600 && ball.posX >= -10
-           && ball.posY >= -10 && ball.posY + ball.height <= 570) {
+       if (wParam == 1) {
            bool shouldBallMove = true;
            for (int i = 0; i < bricks.size(); i++) {
                float d = sqrt(ballStep.x*ballStep.x + ballStep.y * ballStep.y);
