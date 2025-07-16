@@ -35,6 +35,8 @@ vector<brick> bricks{};
 int fullstep = 10;
 step ballStep{fullstep/2,fullstep/2};
 
+step ballStep{3,3};
+
 rect mainrect{393,500,100,10};
 
 rect ball{ 400,450,10,10 };
@@ -166,17 +168,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                    float currentY = ball.posY - ballStep.y * t;
                    int ballCenterX = currentX + ball.width / 2;
                    int ballCenterY = currentY + ball.height / 2;
-                   float x = ballCenterX;
-                   float y = ballCenterY;
-                   if (ballCenterX < bricks[i].posX) x = bricks[i].posX;
-                   else if (ballCenterX > bricks[i].posX + bricks[i].width) x = bricks[i].posX + bricks[i].width;
-                   if (ballCenterY < bricks[i].posY) y = bricks[i].posY;
-                   else if (ballCenterY > bricks[i].posY + bricks[i].height) y = bricks[i].posY + bricks[i].height;
-                   float distX = ballCenterX - x;
-                   float distY = ballCenterY - y;
-                   float distance = sqrt((distX * distX) + (distY * distY));
-                   isCollision = distance <= ball.width / 2;
-                   if (isCollision)
+               float x = ballCenterX;
+               float y = ballCenterY;
+               if (ballCenterX < bricks[i].posX) x = bricks[i].posX;
+               else if (ballCenterX > bricks[i].posX + bricks[i].width) x = bricks[i].posX + bricks[i].width;
+               if (ballCenterY < bricks[i].posY) y = bricks[i].posY;
+               else if (ballCenterY > bricks[i].posY + bricks[i].height) y = bricks[i].posY + bricks[i].height;
+               float distX = ballCenterX - x;
+               float distY = ballCenterY - y;
+               float distance = sqrt((distX * distX) + (distY * distY));
+               isCollision = distance <= ball.width / 2;
+               if (isCollision)
                        break;
                }
                if (isCollision)
@@ -189,9 +191,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                    int colBottom = bricks[i].posY + bricks[i].height - ball.posY;
                    int minCol = min(min(colLeft, colRight), min(colTop, colBottom));
                    if (minCol == colLeft or minCol == colRight) {
+                       ball.posX -= ballStep.x;
                        ballStep.x *= -1;
                    }
                    else if (minCol == colTop or minCol == colBottom) {
+                       ball.posY += ballStep.y;
                        ballStep.y  *= -1;
                    }
                    if (bricks[i].health == 0) {
@@ -261,13 +265,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                    }
                    if (currentY > 570) {
                        PostMessage(hWnd, WM_CLOSE, 0, 0);
-                       break;
+                   break;
                    }
                }
            }
            if (shouldBallMove) {
-               ball.posX += ballStep.x;
-               ball.posY -= ballStep.y;
+           ball.posX += ballStep.x;
+           ball.posY -= ballStep.y;
            }
        
        }
