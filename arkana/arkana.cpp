@@ -192,149 +192,133 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (wParam == 1) {
             bool shouldBallMove = true;
-            for (int i = 0; i < bricks.size(); i++) 
-            {
-                //трассировка+коллизия начало
-                float d = sqrt(ballStep.x * ballStep.x + ballStep.y * ballStep.y);
-                bool isCollision = false;
+            float d = sqrtf(ballStep.x * ballStep.x + ballStep.y * ballStep.y);
 
-                for (float j = 0; j < d; j++) 
-                {
-                    float t = j / d;
-                    float currentX = ball.posX + ballStep.x * t;
-                    float currentY = ball.posY - ballStep.y * t;
-                    int ballCenterX = currentX + ball.width / 2;
-                    int ballCenterY = currentY + ball.height / 2;
+            for (float j = 0; j < d; j++) {
+                float t = j / d;
+                float currentX = ball.posX + ballStep.x * t;
+                float currentY = ball.posY - ballStep.y * t;  
+                int ballCenterX = currentX + ball.width / 2;
+                int ballCenterY = currentY + ball.height / 2;
+
+   
+                for (int i = 0; i < bricks.size(); i++) {
                     float x = ballCenterX;
                     float y = ballCenterY;
 
                     if (ballCenterX < bricks[i].posX) x = bricks[i].posX;
                     else if (ballCenterX > bricks[i].posX + bricks[i].width) x = bricks[i].posX + bricks[i].width;
+
                     if (ballCenterY < bricks[i].posY) y = bricks[i].posY;
                     else if (ballCenterY > bricks[i].posY + bricks[i].height) y = bricks[i].posY + bricks[i].height;
 
                     float distX = ballCenterX - x;
                     float distY = ballCenterY - y;
-                    float distance = sqrt((distX * distX) + (distY * distY));
+                    float distance = sqrt(distX * distX + distY * distY);
 
-                    isCollision = distance <= ball.width / 2;
-                    if (isCollision)
-                        break;
-                }
-                //поиск стороны столкновения
-                if (isCollision)
-                {
-                    bricks[i].health -= 1;
-                    score += 500;
-                    shouldBallMove = false;
-
-                    int colLeft = ball.posX + ball.width - bricks[i].posX;
-                    int colRight = bricks[i].posX + bricks[i].width - ball.posX;
-                    int colTop = ball.posY + ball.height - bricks[i].posY;
-                    int colBottom = bricks[i].posY + bricks[i].height - ball.posY;
-
-                    int minCol = min(min(colLeft, colRight), min(colTop, colBottom));
-
-                    if (minCol == colLeft or minCol == colRight) 
-                    {
-                        ball.posX -= ballStep.x;
-                        ballStep.x *= -1;
-                    }
-                    else if (minCol == colTop or minCol == colBottom) {
-                        ball.posY += ballStep.y;
-                        ballStep.y *= -1;
-                    }
-                        
-                    if (bricks[i].health == 0) 
-                    {
+                    if (distance <= ball.width / 2) {
+                        bricks[i].health -= 1;
                         score += 500;
-                        size_t index_to_remove = i;
-                        bricks.erase(bricks.begin() + index_to_remove);
-                        i--;
+
+ 
+                        int colLeft = (ball.posX + ball.width) - bricks[i].posX;
+                        int colRight = (bricks[i].posX + bricks[i].width) - ball.posX;
+                        int colTop = (ball.posY + ball.height) - bricks[i].posY;
+                        int colBottom = (bricks[i].posY + bricks[i].height) - ball.posY;
+
+                        int minCol = min(min(colLeft, colRight), min(colTop, colBottom));
+
+                        if (minCol == colLeft || minCol == colRight) {
+                            ballStep.x *= -1;
+                        }
+                        else if (minCol == colTop || minCol == colBottom) {
+                            ballStep.y *= -1;  
+                        }
+
+                        if (bricks[i].health == 0) {
+                            bricks.erase(bricks.begin() + i);
+                            i--;
+                        }
+                        if (bricks.size() == 0) {
+                            PostMessage(hWnd, WM_CLOSE, 0, 0);
+                        }
+                        shouldBallMove = false;
+                        break;
                     }
-
-                    if (bricks.size() == 0) PostMessage(hWnd, WM_CLOSE, 0, 0);
                 }
-            }
-            //трассировка+коллизия конец
-            if (shouldBallMove) 
-            {
-                //проверка столкновений с платформой и краями экрана с трассировкой
-                float d = sqrt(ballStep.x * ballStep.x + ballStep.y * ballStep.y);
-                bool isCollision = false;
 
-                for (float j = 0; j < d; j++) 
-                {
-                    float t = j / d;
-                    float currentX = ball.posX + ball.width + ballStep.x * t;
-                    float currentY = ball.posY + ball.height - ballStep.y * t;
-                    int R = ball.height / 2;
-                    float x = currentX;
-                    float y = currentY;
-                    if (currentX < mainrect.posX) x = mainrect.posX;
-                    else if (currentX > mainrect.posX + mainrect.width) x = mainrect.posX + mainrect.width;
-                    if (currentY < mainrect.posY) y = mainrect.posY;
-                    else if (currentY > mainrect.posY + mainrect.height) y = mainrect.posY + mainrect.height;
-                    float distX = currentX - x;
-                    float distY = currentY - y;
-                    float distance = sqrt((distX * distX) + (distY * distY));
-                    isCollision = distance <= ball.width / 2;
-                    if (isCollision) {
+
+                if (shouldBallMove) {
+                    float x = ballCenterX;
+                    float y = ballCenterY;
+
+                    if (ballCenterX < mainrect.posX) x = mainrect.posX;
+                    else if (ballCenterX > mainrect.posX + mainrect.width) x = mainrect.posX + mainrect.width;
+
+                    if (ballCenterY < mainrect.posY) y = mainrect.posY;
+                    else if (ballCenterY > mainrect.posY + mainrect.height) y = mainrect.posY + mainrect.height;
+
+                    float distX = ballCenterX - x;
+                    float distY = ballCenterY - y;
+                    float distance = sqrt(distX * distX + distY * distY);
+
+                    if (distance <= ball.width / 2 && ballStep.y < 0) {  
+
                         int x1 = 0;
                         int x2 = 25;
                         int y2 = 25;
-                        int y1 = abs((mainrect.posX + mainrect.width / 2) - (currentX));
-                        float degress = (((x1 * y1 + x2 * y2) / ((sqrt(x1 * x1 + x2 * x2)) * (sqrt(y1 * y1 + y2 * y2)))) * 180 / 3.14);
-                        float t = (100 * (90 - degress)) / 90;
-                        int stepX = round((fullstep * t) / 100);
+                        int y1 = abs((mainrect.posX + mainrect.width / 2) - ballCenterX);
+                        float degrees = (((x1 * y1 + x2 * y2) / ((sqrt(x1 * x1 + x2 * x2)) * (sqrt(y1 * y1 + y2 * y2)))) * 180 / 3.14);
+                        float t_angle = (100 * (90 - degrees)) / 90;
+                        int stepX = round((fullstep * t_angle) / 100);
                         int stepY = round(fullstep - stepX);
 
-                        if (currentX > mainrect.posX + mainrect.width / 2) 
-                        {
+                        if (ballCenterX > mainrect.posX + mainrect.width / 2) {
                             ballStep.x = stepX;
-                            ballStep.y = stepY;
+                            ballStep.y = stepY;  
                         }
-                        else if (currentX == mainrect.posX + mainrect.width / 2) 
-                        {
+                        else if (ballCenterX == mainrect.posX + mainrect.width / 2) {
                             ballStep.x = 0;
-                            ballStep.y = fullstep;
+                            ballStep.y = fullstep;  
                         }
-                        else 
-                        {
-                            ballStep.x = -1 * stepX;
-                            ballStep.y = stepY;
+                        else {
+                            ballStep.x = -stepX;
+                            ballStep.y = stepY;  
                         }
+
+                        shouldBallMove = false;
+                        break;
                     }
-                    if (currentX < gameRect.posX+R*2 or currentX > gameRect.posX+gameRect.width) 
-                    {
+                }
+
+                if (shouldBallMove) {
+                    int R = ball.width / 2;
+                    if (ballCenterX < gameRect.posX + R || ballCenterX > gameRect.posX + gameRect.width - R) {
                         ballStep.x *= -1;
-                        shouldBallMove = false;
                         break;
                     }
-                    if (currentY < gameRect.posY+R*2) 
-                    {
-                        ballStep.y *= -1;
-                        shouldBallMove = false;
+                    if (ballCenterY < gameRect.posY + R) {
+                        ballStep.y *= -1;  
                         break;
                     }
-                    if (currentY > gameRect.posY+gameRect.height) 
-                    {
+                    if (ballCenterY > gameRect.posY + gameRect.height - R) {
                         PostMessage(hWnd, WM_CLOSE, 0, 0);
                         break;
                     }
                 }
+                if (j+1 > d - 0.0001f) {
+                    ball.posX = currentX;
+                    ball.posY = currentY;
+                }
             }
-            if (shouldBallMove) 
-            {
-                ball.posX += ballStep.x;
-                ball.posY -= ballStep.y;
-            }
-
         }
-        if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && mainrect.posX + mainrect.width < gameRect.posX+gameRect.width) mainrect.posX += 10;
-        if (GetAsyncKeyState(VK_LEFT) & 0x8000 && mainrect.posX > gameRect.posX) mainrect.posX -= 10;
-        InvalidateRect(hWnd, nullptr, FALSE);
 
+        if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && mainrect.posX + mainrect.width < gameRect.posX + gameRect.width)
+            mainrect.posX += 10;
+        if (GetAsyncKeyState(VK_LEFT) & 0x8000 && mainrect.posX > gameRect.posX)
+            mainrect.posX -= 10;
+
+        InvalidateRect(hWnd, nullptr, FALSE);
         break;
 
     case WM_DESTROY:
@@ -347,4 +331,3 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-
