@@ -32,7 +32,7 @@ struct brick {
 
 vector<brick> bricks{};
 
-int fullstep = 10;
+int fullstep = 1000;
 
 step ballStep{ fullstep / 2,fullstep / 2 };
 rect gameRect{100,50,600,600};
