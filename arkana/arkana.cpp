@@ -34,7 +34,7 @@ struct brick {
 
 vector<brick> bricks{};
 
-int fullstep = 40;
+int fullstep = 10;
 
 step ballStep{ fullstep / 2,fullstep / 2 };
 rect gameRect{ 100,50,600,600 };
@@ -127,7 +127,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     case WM_PAINT:
     {
-        SetTimer(hWnd, 1, 120, NULL);
+        SetTimer(hWnd, 1, 30, NULL);
 
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
@@ -237,10 +237,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                                 reflectedThisStep = true;
 
-                                /*if (--bricks[h].health <= 0) {
+                                if (--bricks[h].health <= 0) {
                                     bricks.erase(bricks.begin() + h);
                                     h--;
-                                }*/
+                                }
                                 if (bricks.size() == 0) {
                                     PostMessage(hWnd, WM_CLOSE, 0, 0);
                                 }
@@ -299,7 +299,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (doty > gameRect.posY + gameRect.height && !reflectedThisStep) {
                     currentBallStep.y *= -1;
-                    currentY = gameRect.posY + 1;
+                    currentY = gameRect.posY+gameRect.height - 1 - ball.width;
                     reflectedThisStep = true;
                     /*PostMessage(hWnd, WM_CLOSE, 0, 0);*/
                 }
