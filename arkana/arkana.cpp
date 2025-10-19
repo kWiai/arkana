@@ -45,9 +45,7 @@ rect ball{ gameRect.posX + 400,gameRect.posY + 450,20,20 };
 
 int startBrickPosX = gameRect.posX + 30;
 int startBrickPosY = gameRect.posY + 100;
-step currentBallStep = ballStep;
-float currentX = ball.posX;
-float currentY = ball.posY;
+
 
 
 POINT p;
@@ -62,20 +60,7 @@ HDC hdcBuffer;
 HBITMAP hBitmap;
 RECT clientRect;
 
-//for (int i = 0; i < bricks.size(); i++)
-//{
-//    if (bricks[i].health == 1) color = { 0,255,0 };
-//    if (bricks[i].health == 2) color = { 0,0,255 };
-//    
-//    graphics.FillRectangle(&brickBrush, bricks[i].posX, bricks[i].posY, bricks[i].width, bricks[i].height);
-//    graphics.DrawRectangle(&pen, bricks[i].posX, bricks[i].posY, bricks[i].width, bricks[i].height);
-//}
-//
-//graphics.FillRectangle(&solidBrush, mainrect.posX, mainrect.posY, mainrect.width, mainrect.height);
-//graphics.DrawRectangle(&pen, mainrect.posX, mainrect.posY, mainrect.width, mainrect.height);
-//
-//graphics.FillEllipse(&solidBrush, ball.posX, ball.posY, ball.width, ball.height);
-//graphics.DrawEllipse(&ballPen, ball.posX, ball.posY, ball.width, ball.height);
+
 
 void DrawingGameRect(Graphics& graf, Pen& bgpen, SolidBrush& bgBrush, HatchBrush& brush1, HatchBrush& brush2) {
     graf.DrawRectangle(&bgpen, gameRect.posX - 1, gameRect.posY - 1, gameRect.width + 1, gameRect.height + 1);
@@ -103,7 +88,7 @@ void DrawingBricks(Graphics& graf, Pen& pen) {
         graf.DrawRectangle(&pen, brick.posX, brick.posY, brick.width, brick.height);
     }
 }
-void move(float currentStep,float distance) {
+void move(float currentStep,float distance,step &currentBallStep, float &currentX, float &currentY) {
     
     if (currentStep + 1 >= distance && !debug) {
         ballStep = currentBallStep;
@@ -121,7 +106,7 @@ void debuging() {
     
 }
 
-void checkMainRectCollisions(float dotx,float doty,float ballCenterX,bool &reflectedThisStep) {
+void checkMainRectCollisions(float dotx,float doty,float ballCenterX,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
     if (dotx > mainrect.posX && dotx < mainrect.posX + mainrect.width &&
         doty > mainrect.posY && doty < mainrect.posY + mainrect.height) {
 
@@ -148,7 +133,7 @@ void checkMainRectCollisions(float dotx,float doty,float ballCenterX,bool &refle
         reflectedThisStep = true;
     }
 }
-void checkGameRectCollisions(float dotx,float doty,bool &reflectedThisStep) {
+void checkGameRectCollisions(float &dotx,float &doty,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
     if (dotx < gameRect.posX && !reflectedThisStep) {
         currentBallStep.x *= -1;
         currentX = gameRect.posX + 1;
@@ -174,7 +159,7 @@ void checkGameRectCollisions(float dotx,float doty,bool &reflectedThisStep) {
         /*PostMessage(hWnd, WM_CLOSE, 0, 0);*/
     }
 }
-void checkBricksCollisions(float dotx,float doty,float distance,std::vector<int> hitBricks,bool &reflectedThisStep) {
+void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<int> &hitBricks,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
     for (int h = 0; h < bricks.size(); h++) {
         if (dotx + currentBallStep.x / distance > bricks[h].posX && dotx + currentBallStep.x / distance < bricks[h].posX + bricks[h].width &&
             doty - currentBallStep.y / distance > bricks[h].posY && doty - currentBallStep.y / distance < bricks[h].posY + bricks[h].height) {
@@ -309,7 +294,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
        SolidBrush bgBrush(Color(240, 245, 255));
        HatchBrush brush1(HatchStyleDiagonalCross, Color(180, 160, 196, 255), Color(0, 0, 0, 0));
        HatchBrush brush2(HatchStyleDottedGrid, Color(80, 255, 154, 162), Color(0, 0, 0, 0));
-       
+       step currentBallStep = ballStep;
+       float currentX = ball.posX;
+       float currentY = ball.posY;
 
         PAINTSTRUCT ps;
 
@@ -350,8 +337,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             float startDegress = bdegress - 90.0f;
             float finishDegress = bdegress + 90.0f;
 
-            int ballCenterX = currentX + ball.width / 2;
-            int ballCenterY = currentY + ball.height / 2;
+            float ballCenterX = currentX + ball.width / 2;
+            float ballCenterY = currentY + ball.height / 2;
 
             bool reflectedThisStep = false;
             std::vector<int> hitBricks;
@@ -361,22 +348,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 float dotx = ballCenterX + R * cos(ri);
                 float doty = ballCenterY + R * sin(ri);
 
+                checkMainRectCollisions(dotx, doty, ballCenterX, reflectedThisStep,currentBallStep,currentX,currentY);
+                checkGameRectCollisions(dotx, doty, reflectedThisStep, currentBallStep, currentX, currentY);
+                checkBricksCollisions(dotx, doty, d, hitBricks, reflectedThisStep, currentBallStep, currentX, currentY);
 
-                checkMainRectCollisions(dotx,doty,ballCenterX,reflectedThisStep);
-                checkGameRectCollisions(dotx, doty, reflectedThisStep);
-                checkBricksCollisions(dotx, doty,d,hitBricks, reflectedThisStep);
-                
                 SetPixel(hdcBuffer, dotx, doty, Color::Black);
             }
-            if (!debug) {
-                move(j, d);
-            }
-            else {
+            move(j, d, currentBallStep, currentX, currentY);
+
+            if (debug) {
+
                 debuging();
             }
         }
 
-        //
         Font font(L"Times New Roman", 20.f, FontStyleBold);
 
         wstringstream wss;
