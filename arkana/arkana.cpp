@@ -54,6 +54,7 @@ int score = 0;
 
 bool debug = false;
 
+
 HWND hWnd;
 ULONG_PTR gdiplusToken;
 HDC hdcBuffer;
@@ -211,7 +212,30 @@ void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<i
         }
     }
 }
-
+void createBricks() {
+    for (int i = 1; i < 15; i++)
+    {
+        bricks.push_back({ startBrickPosX, startBrickPosY, 2 , 80, 20 });
+        startBrickPosX += 140;
+        if (i % 4 == 0 && i != 0 && i != 1)
+        {
+            startBrickPosY += 100;
+            startBrickPosX = gameRect.posX + 30;
+        }
+    }
+}
+void checkButtons() {
+    if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && mainrect.posX + mainrect.width < gameRect.posX + gameRect.width)
+        mainrect.posX += 10;
+    if (GetAsyncKeyState(VK_LEFT) & 0x8000 && mainrect.posX > gameRect.posX)
+        mainrect.posX -= 10;
+    if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
+        debug = true;
+    }
+    if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+        debug = false;
+    }
+}
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -263,30 +287,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return (int)msg.wParam;
 }
 
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_CREATE:
-        //создание блоков
-        for (int i = 1; i < 15; i++)
-        {
-            bricks.push_back({ startBrickPosX, startBrickPosY, 2 , 80, 20 });
-            startBrickPosX += 140;
-            if (i % 4 == 0 && i != 0 && i != 1)
-            {
-                startBrickPosY += 100;
-                startBrickPosX = gameRect.posX + 30;
-            }
-        }
+        createBricks();
+        break;
 
+    case WM_TIMER:
+
+        if (wParam == 1) {
+            checkButtons();
+            InvalidateRect(hWnd, nullptr, FALSE);
+            break;
+        }
     case WM_PAINT:
     {
-        
-
-        SetTimer(hWnd, 1, 30, NULL);
-
-       
+       SetTimer(hWnd, 1, 30, NULL);
        Pen pen(Color(0, 0, 0), 2.0f);
        Pen ballPen(Color(0, 0, 0));
        Pen bgPen(Color::Black, 10.f);
@@ -319,9 +338,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         float comp[6] = { 0.0f, 0.2f, 0.3f, 0.7f, 0.8f, 1.0f };
         bgPen.SetCompoundArray(comp, 6);
         
-        
-        
-        
+
         float d = sqrtf(ballStep.x * ballStep.x + ballStep.y * ballStep.y);
         int R = ball.width / 2;
 
@@ -385,22 +402,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         InvalidateRect(hWnd, NULL, TRUE);
         break;
 
-    case WM_TIMER:
-
-        if (wParam == 1) {
-            if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && mainrect.posX + mainrect.width < gameRect.posX + gameRect.width)
-                mainrect.posX += 10;
-            if (GetAsyncKeyState(VK_LEFT) & 0x8000 && mainrect.posX > gameRect.posX)
-                mainrect.posX -= 10;
-            if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
-                debug = true;
-            }
-            if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-                debug = false;
-            }
-            InvalidateRect(hWnd, nullptr, FALSE);
-            break;
-        }
 
     case WM_DESTROY:
 
