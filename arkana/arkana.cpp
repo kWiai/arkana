@@ -38,7 +38,7 @@ struct brick {
 
 vector<brick> bricks{};
 
-int fullstep = 10;
+int fullstep = 100;
 
 step ballStep{ fullstep / 2,fullstep / 2 };
 rect gameRect{ 100,50,600,600 };
@@ -175,18 +175,24 @@ void checkGameRectCollisions(float &dotx,float &doty,bool &reflectedThisStep, st
         /*PostMessage(hWnd, WM_CLOSE, 0, 0);*/
     }
 }
-void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<const brick*>& hitBricks,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
+void checkBricksCollisions(float &dotx,float &doty,float &distance,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&startCounter);
-    float dx = dotx + currentBallStep.x / distance;
-    float dy = doty - currentBallStep.y / distance;
+    const float dx = dotx + currentBallStep.x / distance;
+    const float dy = doty - currentBallStep.y / distance;
     for (auto &brick:bricks) {
-        if (dx > brick.posX && dx < brick.posX + brick.width &&
-            dy > brick.posY && dy < brick.posY + brick.height) {
+        const float left = brick.posX;
+        const float right = brick.posX + brick.width;
+        const float top = brick.posY;
+        const float bot = brick.posY + brick.height;
 
-            if (std::find(hitBricks.begin(), hitBricks.end(), &brick) == hitBricks.end()) {
+        if (!(dx > left)) continue;
+        if (!(dx < right)) continue;
+        if (!(dy > top)) continue;
+        if (!(dy < bot)) continue;
+
                 if (!reflectedThisStep) {
-                    hitBricks.push_back(&brick);
+                   
 
                     int colLeft = dotx - brick.posX;
                     int colRight = (brick.posX + brick.width) - dotx;
@@ -224,10 +230,7 @@ void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<c
                     }
                     score += 500;
                     break;
-                }
-            }
-
-        }
+                } 
     }
     bricks.erase(std::remove_if(bricks.begin(), bricks.end(),
         [](const brick& b) { return b.health <= 0; }), bricks.end());
@@ -391,7 +394,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 checkMainRectCollisions(dotx, doty, ballCenterX, reflectedThisStep,currentBallStep,currentX,currentY);
                 checkGameRectCollisions(dotx, doty, reflectedThisStep, currentBallStep, currentX, currentY);
-                checkBricksCollisions(dotx, doty, d, hitBricks, reflectedThisStep, currentBallStep, currentX, currentY);
+                checkBricksCollisions(dotx, doty, d, reflectedThisStep, currentBallStep, currentX, currentY);
 
                 SetPixel(hdcBuffer, dotx, doty, Color::Black);
             }
