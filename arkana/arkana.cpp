@@ -6,8 +6,12 @@
 #include <cmath>
 #define _USE_MATH_DEFINES
 #include <sstream>
+#include <strsafe.h>
 #pragma comment(lib, "gdiplus.lib")
-
+LARGE_INTEGER frequency;
+LARGE_INTEGER startCounter;
+LARGE_INTEGER endCounter;
+double elapsedSeconds;
 using namespace Gdiplus;
 using namespace std;
 
@@ -81,7 +85,7 @@ void DrawingBall(Graphics& graf, Pen& ballPen, SolidBrush& solidBrush) {
 }
 
 void DrawingBricks(Graphics& graf, Pen& pen) {
-    for (auto brick : bricks) {
+    for (const auto &brick : bricks) {
         if (brick.health == 1) color = { 0,255,0 };
         else color = { 0,0,255 };
         SolidBrush brickBrush(color);
@@ -98,6 +102,17 @@ void move(float currentStep,float distance,step &currentBallStep, float &current
 
     }
 
+}
+static int frameCounter = 0;
+void OutputFrameStats(double elapsedTime) {
+    frameCounter++;
+    if (frameCounter % 30 == 0) { // выводить каждые 30 кадров
+        WCHAR buffer[256];
+        StringCchPrintf(buffer, 256,
+            L"[STATS] Avg Frame: %.2fms | FPS: %.0f | Bricks: %d\n",
+            elapsedTime * 1000, 1.0 / elapsedTime, bricks.size());
+        OutputDebugString(buffer);
+    }
 }
 void debuging() {
     
@@ -160,19 +175,23 @@ void checkGameRectCollisions(float &dotx,float &doty,bool &reflectedThisStep, st
         /*PostMessage(hWnd, WM_CLOSE, 0, 0);*/
     }
 }
-void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<int> &hitBricks,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
-    for (int h = 0; h < bricks.size(); h++) {
-        if (dotx + currentBallStep.x / distance > bricks[h].posX && dotx + currentBallStep.x / distance < bricks[h].posX + bricks[h].width &&
-            doty - currentBallStep.y / distance > bricks[h].posY && doty - currentBallStep.y / distance < bricks[h].posY + bricks[h].height) {
+void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<const brick*>& hitBricks,bool &reflectedThisStep, step& currentBallStep, float& currentX, float& currentY) {
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&startCounter);
+    float dx = dotx + currentBallStep.x / distance;
+    float dy = doty - currentBallStep.y / distance;
+    for (auto &brick:bricks) {
+        if (dx > brick.posX && dx < brick.posX + brick.width &&
+            dy > brick.posY && dy < brick.posY + brick.height) {
 
-            if (std::find(hitBricks.begin(), hitBricks.end(), h) == hitBricks.end()) {
+            if (std::find(hitBricks.begin(), hitBricks.end(), &brick) == hitBricks.end()) {
                 if (!reflectedThisStep) {
-                    hitBricks.push_back(h);
+                    hitBricks.push_back(&brick);
 
-                    int colLeft = dotx - bricks[h].posX;
-                    int colRight = (bricks[h].posX + bricks[h].width) - dotx;
-                    int colTop = doty - bricks[h].posY;
-                    int colBottom = (bricks[h].posY + bricks[h].height) - doty;
+                    int colLeft = dotx - brick.posX;
+                    int colRight = (brick.posX + brick.width) - dotx;
+                    int colTop = doty - brick.posY;
+                    int colBottom = (brick.posY + brick.height) - doty;
                     int minCol = min(min(colLeft, colRight), min(colTop, colBottom));
 
                     if (min(colLeft, colRight) == min(colTop, colBottom)) {
@@ -196,11 +215,10 @@ void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<i
                     currentY += currentBallStep.y / distance;
 
                     reflectedThisStep = true;
+                    brick.health -= 1;
+                    
+                    
 
-                    if (--bricks[h].health <= 0) {
-                        bricks.erase(bricks.begin() + h);
-                        h--;
-                    }
                     if (bricks.size() == 0) {
                         PostMessage(hWnd, WM_CLOSE, 0, 0);
                     }
@@ -211,15 +229,21 @@ void checkBricksCollisions(float &dotx,float &doty,float &distance,std::vector<i
 
         }
     }
+    bricks.erase(std::remove_if(bricks.begin(), bricks.end(),
+        [](const brick& b) { return b.health <= 0; }), bricks.end());
+    QueryPerformanceCounter(&endCounter);
+    double elapsedTicks = static_cast<double>(endCounter.QuadPart - startCounter.QuadPart);
+    elapsedSeconds = elapsedTicks / frequency.QuadPart;
+    OutputFrameStats(elapsedTicks);
 }
 void createBricks() {
-    for (int i = 1; i < 15; i++)
+    for (int i = 1; i < 5000; i++)
     {
-        bricks.push_back({ startBrickPosX, startBrickPosY, 2 , 80, 20 });
-        startBrickPosX += 140;
-        if (i % 4 == 0 && i != 0 && i != 1)
+        bricks.push_back({ startBrickPosX, startBrickPosY, 2 , 5, 7 });
+        startBrickPosX += 6;
+        if (i % 100 == 0 && i != 0 && i != 1)
         {
-            startBrickPosY += 100;
+            startBrickPosY += 8;
             startBrickPosX = gameRect.posX + 30;
         }
     }
@@ -358,7 +382,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             float ballCenterY = currentY + ball.height / 2;
 
             bool reflectedThisStep = false;
-            std::vector<int> hitBricks;
+            std::vector<const brick*> hitBricks;
 
             for (float i = startDegress; i < finishDegress; i += 12) {
                 float ri = i * (3.14f / 180.0f);
