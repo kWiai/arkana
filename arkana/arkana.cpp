@@ -180,6 +180,7 @@ void checkBricksCollisions(float &dotx,float &doty,float &distance,bool &reflect
     QueryPerformanceCounter(&startCounter);
     const float dx = dotx + currentBallStep.x / distance;
     const float dy = doty - currentBallStep.y / distance;
+
     for (auto &brick:bricks) {
         const float left = brick.posX;
         const float right = brick.posX + brick.width;
